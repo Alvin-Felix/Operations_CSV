@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Ops Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-32 selection:bg-blue-100 selection:text-blue-700">
+
+    <!-- LANDING PAGE -->
+    <div id="landing-page" class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-lg">
+            <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8 border border-white">
+                <div class="flex justify-center mb-6">
+                    <div class="bg-blue-50 p-4 rounded-2xl">
+                        <i data-lucide="layers" class="text-blue-600" width="32" height="32"></i>
+                    </div>
+                </div>
+                <h1 class="text-3xl font-bold text-center text-slate-800 mb-2 tracking-tight">Bulk Ops</h1>
+                <p class="text-center text-slate-500 mb-8 text-sm font-medium">Generate compliant batch files instantly</p>
+
+                <div class="space-y-4">
+                    <button onclick="initApp('hold')" class="group w-full flex items-center p-5 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 active:scale-[0.98]">
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-3.5 rounded-xl mr-5 shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-200">
+                            <i data-lucide="file-text" class="text-white" width="24" height="24"></i>
+                        </div>
+                        <div class="text-left">
+                            <h2 class="text-lg font-bold text-slate-800 group-hover:text-blue-700 transition-colors">Hold Operations</h2>
+                            <p class="text-slate-400 text-xs font-medium mt-0.5">Set/Remove Hold (SH/RH)</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="ml-auto text-slate-300 group-hover:text-blue-400 transition-colors"></i>
+                    </button>
+
+                    <button onclick="initApp('stop')" class="group w-full flex items-center p-5 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-red-300 transition-all duration-200 active:scale-[0.98]">
+                        <div class="bg-gradient-to-br from-red-500 to-red-600 p-3.5 rounded-xl mr-5 shadow-lg shadow-red-500/20 group-hover:scale-110 transition-transform duration-200">
+                            <i data-lucide="stop-circle" class="text-white" width="24" height="24"></i>
+                        </div>
+                        <div class="text-left">
+                            <h2 class="text-lg font-bold text-slate-800 group-hover:text-red-700 transition-colors">Stop Operations</h2>
+                            <p class="text-slate-400 text-xs font-medium mt-0.5">Set/Remove Stop (SS/RS)</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="ml-auto text-slate-300 group-hover:text-red-400 transition-colors"></i>
+                    </button>
+                </div>
+                
+                <div id="recovery-banner" class="hidden mt-6 p-4 bg-amber-50 border border-amber-100 rounded-xl flex justify-between items-center animate-slide-up">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="history" class="text-amber-600" width="16" height="16"></i>
+                        <span class="text-xs text-amber-800 font-semibold">Draft found</span>
+                    </div>
+                    <div class="flex gap-3 text-xs font-medium">
+                        <button class="text-amber-800 hover:underline">Resume</button>
+                        <button onclick="clearStorage()" class="text-amber-600/70 hover:text-amber-800">Discard</button>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 text-[10px] text-slate-400 text-center font-mono">
+                    DESTINATION: E:\FTP\INTERFACES\BATCH_UPLOAD
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP CONTAINER -->
+    <div id="app-container" class="hidden">
+        <div class="sticky top-0 z-30 backdrop-blur-md bg-white/80 border-b border-slate-200/60 px-4 py-3 shadow-sm transition-all duration-200">
+            <div class="max-w-3xl mx-auto flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="resetApp()" class="p-2 -ml-2 text-slate-500 hover:bg-slate-100/80 hover:text-slate-800 rounded-full transition-colors">
+                        <i data-lucide="arrow-left" width="20" height="20"></i>
+                    </button>
+                    <div>
+                        <h1 id="header-title" class="text-base font-bold text-slate-800 leading-tight">Operations</h1>
+                        <p class="text-[10px] text-slate-400 font-medium tracking-wide uppercase">Batch Generation</p>
+                    </div>
+                </div>
+                <div class="bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                    <span class="text-xs font-mono font-medium text-slate-600" id="record-counter">0/100</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 max-w-3xl mx-auto space-y-5">
+            <div id="records-list" class="space-y-5 pb-4"></div>
+            
+            <button onclick="addRecord()" class="group w-full py-4 bg-slate-50 border-2 border-dashed border-slate-300 text-slate-500 rounded-2xl font-semibold flex items-center justify-center gap-2 active:bg-blue-50 active:border-blue-300 active:text-blue-600 transition-all duration-200 hover:border-slate-400 hover:bg-white hover:shadow-sm">
+                <div class="bg-slate-200 rounded-full p-1 group-hover:bg-slate-300 transition-colors">
+                    <i data-lucide="plus" width="16" height="16" class="text-slate-600"></i>
+                </div>
+                <span>Add Another Record</span>
+            </button>
+            <div class="h-24"></div>
+        </div>
+
+        <!-- Floating Footer Area -->
+        <div class="fixed bottom-0 left-0 right-0 z-40 p-4 bg-gradient-to-t from-white via-white to-transparent pb-6">
+            <div class="max-w-md mx-auto flex flex-col gap-3">
+                <!-- Toggle Switch for Headers -->
+                <label class="flex items-center justify-center gap-2 text-xs font-medium text-slate-500 cursor-pointer p-2 rounded-lg hover:bg-slate-50 transition-colors w-fit mx-auto">
+                    <input type="checkbox" id="include-header-toggle" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <span>Include CSV Header Row (For verification)</span>
+                </label>
+
+                <button onclick="generateCSV()" class="w-full bg-slate-900 text-white shadow-xl shadow-slate-900/20 rounded-2xl px-8 py-4 font-bold text-base flex items-center justify-center gap-3 active:scale-95 transition-all hover:bg-slate-800 hover:shadow-2xl">
+                    <i data-lucide="download" width="20" height="20"></i>
+                    Download CSV
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        const MAX_RECORDS = 100;
+        const STORAGE_KEY = 'bulk_ops_draft_v3';
+
+        // --- STATE ---
+        let currentMode = null;
+        let records = [];
+        
+        window.onload = function() {
+            loadState();
+        };
+
+        function initApp(mode, fromStorage = false) {
+            currentMode = mode;
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            
+            const titleEl = document.getElementById('header-title');
+            if(mode === 'hold') {
+                titleEl.innerText = 'Hold Operations';
+                titleEl.className = 'text-base font-bold text-blue-700 leading-tight';
+            } else {
+                titleEl.innerText = 'Stop Operations';
+                titleEl.className = 'text-base font-bold text-red-700 leading-tight';
+            }
+            
+            if (!fromStorage) {
+                records = [];
+                addRecord(); 
+            } else {
+                renderRecords();
+            }
+            
+            lucide.createIcons();
+            window.scrollTo(0, 0);
+        }
+
+        function resetApp() {
+            if (confirm("Go back to menu? Your current draft is saved.")) {
+                document.getElementById('app-container').classList.add('hidden');
+                document.getElementById('landing-page').classList.remove('hidden');
+                checkStorageForBanner();
+            }
+        }
+
+        function checkStorageForBanner() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const banner = document.getElementById('recovery-banner');
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (data.records && data.records.length > 0) {
+                    banner.classList.remove('hidden');
+                    const resumeBtn = banner.querySelector('button:first-child');
+                    resumeBtn.onclick = () => {
+                        records = data.records;
+                        initApp(data.mode, true);
+                    };
+                }
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function clearStorage() {
+            if (confirm("Discard saved draft?")) {
+                localStorage.removeItem(STORAGE_KEY);
+                checkStorageForBanner();
+            }
+        }
+
+        function createEmptyRecord() {
+            if (currentMode === 'hold') {
+                return { identifier: 'SH', accountNo: '', holdAmount: '', reasonCode: '04', reason: '', holdSetDate: '', journalNo: '' };
+            } else {
+                return { identifier: 'SS', accountNo: '', stopReason: '01', reasonText: '', accountCondition: '0' };
+            }
+        }
+
+        function addRecord() {
+            if (records.length >= MAX_RECORDS) {
+                alert(`Maximum limit of ${MAX_RECORDS} records reached.`);
+                return;
+            }
+            records.push(createEmptyRecord());
+            renderRecords(true);
+        }
+
+        function removeRecord(index) {
+            records.splice(index, 1);
+            renderRecords();
+        }
+
+        function updateRecordData(index, field, value) {
+            records[index][field] = value;
+            if (currentMode === 'hold' && field === 'identifier') {
+                if (value === 'RH') {
+                    records[index].holdSetDate = '';
+                    records[index].journalNo = '';
+                }
+                renderRecords(); 
+            }
+            saveState();
+        }
+
+        function saveState() {
+            const state = { mode: currentMode, records: records, timestamp: new Date().getTime() };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.mode && Array.isArray(data.records) && data.records.length > 0) {
+                        records = data.records;
+                        initApp(data.mode, true);
+                        return;
+                    }
+                } catch (e) { console.error("Storage corrupt", e); }
+            }
+            document.getElementById('landing-page').classList.remove('hidden');
+        }
+
+        function renderRecords(animateLast = false) {
+            const container = document.getElementById('records-list');
+            container.innerHTML = '';
+            document.getElementById('record-counter').innerText = `${records.length}/${MAX_RECORDS}`;
+
+            records.forEach((record, index) => {
+                const isLast = index === records.length - 1;
+                const shouldAnimate = animateLast && isLast;
+                
+                const html = currentMode === 'hold' 
+                    ? getHoldRecordHTML(record, index, shouldAnimate) 
+                    : getStopRecordHTML(record, index, shouldAnimate);
+                
+                const div = document.createElement('div');
+                div.innerHTML = html;
+                container.appendChild(div.firstElementChild);
+            });
+
+            lucide.createIcons();
+            saveState();
+        }
+
+        const inputBase = "w-full mt-1.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-medium text-slate-700 outline-none transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400";
+        const labelBase = "text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1";
+        const selectBase = "w-full mt-1.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-medium text-slate-700 outline-none transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-no-repeat bg-[right_1rem_center]";
+
+        function getHoldRecordHTML(record, index, animate) {
+            const isRH = record.identifier === 'RH';
+            const disabledClass = isRH ? 'opacity-50 cursor-not-allowed bg-slate-100' : '';
+            const disabledAttr = isRH ? 'disabled' : '';
+            const animClass = animate ? 'animate-slide-up' : '';
+            // Styles for the left strip
+            const stripColor = 'bg-blue-50 border-blue-100 text-blue-600';
+            const borderColor = 'group-hover:border-blue-300';
+
+            return `
+            <div class="group bg-white rounded-2xl shadow-sm hover:shadow-md border border-slate-200 transition-all duration-200 flex overflow-hidden ${animClass} ${borderColor}">
+                <!-- S.No Column -->
+                <div class="w-12 border-r border-slate-100 flex items-center justify-center flex-shrink-0 ${stripColor}">
+                    <span class="text-sm font-bold opacity-80">${index + 1}</span>
+                </div>
+                
+                <!-- Main Content -->
+                <div class="flex-1 min-w-0">
+                    <div class="bg-slate-50/30 px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-500">${record.identifier === 'SH' ? 'Set Hold' : 'Remove Hold'}</span>
+                        ${records.length > 1 ? `
+                        <button onclick="removeRecord(${index})" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 -mr-1 rounded-lg transition-colors">
+                            <i data-lucide="trash-2" width="16" height="16"></i>
+                        </button>` : ''}
+                    </div>
+
+                    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="${labelBase}">Operation</label>
+                            <select onchange="updateRecordData(${index}, 'identifier', this.value)" class="${selectBase}">
+                                <option value="SH" ${record.identifier === 'SH' ? 'selected' : ''}>Set Hold (SH)</option>
+                                <option value="RH" ${record.identifier === 'RH' ? 'selected' : ''}>Remove Hold (RH)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="${labelBase}">Account No</label>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="11"
+                                   value="${record.accountNo}"
+                                   oninput="updateRecordData(${index}, 'accountNo', this.value)"
+                                   class="${inputBase}"
+                                   placeholder="11 digits">
+                        </div>
+
+                        <div>
+                            <label class="${labelBase}">Amount</label>
+                            <input type="text" inputmode="decimal"
+                                   value="${record.holdAmount}"
+                                   oninput="updateRecordData(${index}, 'holdAmount', this.value)"
+                                   class="${inputBase}"
+                                   placeholder="0.00">
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="col-span-1">
+                                <label class="${labelBase}">Code</label>
+                                <input type="text" inputmode="numeric" maxlength="2"
+                                       value="${record.reasonCode}"
+                                       oninput="updateRecordData(${index}, 'reasonCode', this.value)"
+                                       class="${inputBase} text-center"
+                                       placeholder="04">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="${labelBase}">Reason</label>
+                                <input type="text" maxlength="24"
+                                       value="${record.reason}"
+                                       oninput="updateRecordData(${index}, 'reason', this.value)"
+                                       class="${inputBase}"
+                                       placeholder="Brief reason">
+                            </div>
+                        </div>
+
+                        <div class="${disabledClass} transition-opacity duration-200">
+                            <label class="${labelBase}">Set Date</label>
+                            <input type="date"
+                                   value="${record.holdSetDate}" ${disabledAttr}
+                                   oninput="updateRecordData(${index}, 'holdSetDate', this.value)"
+                                   class="${inputBase} ${disabledClass}">
+                        </div>
+
+                        <div class="${disabledClass} transition-opacity duration-200">
+                            <label class="${labelBase}">Journal No</label>
+                            <input type="text" inputmode="numeric" maxlength="9"
+                                   value="${record.journalNo}" ${disabledAttr}
+                                   oninput="updateRecordData(${index}, 'journalNo', this.value)"
+                                   class="${inputBase} ${disabledClass}">
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function getStopRecordHTML(record, index, animate) {
+            const animClass = animate ? 'animate-slide-up' : '';
+            const borderColor = 'group-hover:border-red-300';
+            const stripColor = 'bg-red-50 border-red-100 text-red-600';
+            
+            return `
+            <div class="group bg-white rounded-2xl shadow-sm hover:shadow-md border border-slate-200 transition-all duration-200 flex overflow-hidden ${animClass} ${borderColor}">
+                <!-- S.No Column -->
+                <div class="w-12 border-r border-slate-100 flex items-center justify-center flex-shrink-0 ${stripColor}">
+                    <span class="text-sm font-bold opacity-80">${index + 1}</span>
+                </div>
+
+                <!-- Main Content -->
+                <div class="flex-1 min-w-0">
+                    <div class="bg-slate-50/30 px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-500">${record.identifier === 'SS' ? 'Set Stop' : 'Remove Stop'}</span>
+                        ${records.length > 1 ? `
+                        <button onclick="removeRecord(${index})" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 -mr-1 rounded-lg transition-colors">
+                            <i data-lucide="trash-2" width="16" height="16"></i>
+                        </button>` : ''}
+                    </div>
+
+                    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="${labelBase}">Operation</label>
+                            <select onchange="updateRecordData(${index}, 'identifier', this.value)" class="${selectBase}">
+                                <option value="SS" ${record.identifier === 'SS' ? 'selected' : ''}>Set Stop (SS)</option>
+                                <option value="RS" ${record.identifier === 'RS' ? 'selected' : ''}>Remove Stop (RS)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="${labelBase}">Account No</label>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="11"
+                                   value="${record.accountNo}"
+                                   oninput="updateRecordData(${index}, 'accountNo', this.value)"
+                                   class="${inputBase}"
+                                   placeholder="11 digits">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="${labelBase}">Code</label>
+                                <input type="text" inputmode="numeric" maxlength="2"
+                                       value="${record.stopReason}"
+                                       oninput="updateRecordData(${index}, 'stopReason', this.value)"
+                                       class="${inputBase}"
+                                       placeholder="01">
+                            </div>
+                            <div>
+                                <label class="${labelBase}">Condition</label>
+                                <select onchange="updateRecordData(${index}, 'accountCondition', this.value)" class="${selectBase}">
+                                    <option value="0" ${record.accountCondition === '0' ? 'selected' : ''}>Normal</option>
+                                    <option value="1" ${record.accountCondition === '1' ? 'selected' : ''}>Frozen</option>
+                                    <option value="3" ${record.accountCondition === '3' ? 'selected' : ''}>Dr Frz</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="${labelBase}">Reason Text (Opt)</label>
+                            <input type="text" maxlength="17"
+                                   value="${record.reasonText}"
+                                   oninput="updateRecordData(${index}, 'reasonText', this.value)"
+                                   class="${inputBase}">
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- VALIDATION & EXPORT ---
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const parts = dateString.split('-');
+            if (parts.length !== 3) return '';
+            const [year, month, day] = parts;
+            return `${day}${month}${year}`;
+        }
+
+        function sanitizeCSV(value) {
+            if (value === null || value === undefined) return '';
+            let v = String(value);
+            v = v.replace(/,/g, ' '); 
+            v = v.replace(/[\r\n]+/g, ' '); 
+            if (/^[=+\-@]/.test(v)) v = "'" + v;
+            return v.trim();
+        }
+
+        function generateCSV() {
+            let errors = [];
+            const includeHeader = document.getElementById('include-header-toggle').checked;
+
+            if (currentMode === 'hold') {
+                records.forEach((r, i) => {
+                    const idx = i + 1;
+                    if (!r.accountNo || r.accountNo.length !== 11) errors.push(`Rec ${idx}: Account No must be 11 digits`);
+                    if (r.identifier === 'SH') {
+                        if (!r.holdAmount) errors.push(`Rec ${idx}: Amount mandatory for SH`);
+                        else if (Number(r.holdAmount) <= 0) errors.push(`Rec ${idx}: Amount must be > 0`);
+                        if (!r.reasonCode) errors.push(`Rec ${idx}: Code mandatory`);
+                        if (!r.reason) errors.push(`Rec ${idx}: Reason mandatory`);
+                    }
+                    if (r.holdAmount && !/^\d+(\.\d{1,2})?$/.test(r.holdAmount)) errors.push(`Rec ${idx}: Invalid Amount format`);
+                });
+            } else {
+                records.forEach((r, i) => {
+                    const idx = i + 1;
+                    if (!r.accountNo || r.accountNo.length !== 11) errors.push(`Rec ${idx}: Account No must be 11 digits`);
+                    if (!r.stopReason) errors.push(`Rec ${idx}: Reason Code mandatory`);
+                });
+            }
+
+            if (errors.length > 0) {
+                alert("Validation Errors:\n\n" + errors.slice(0, 10).join('\n') + (errors.length > 10 ? '\n...and more' : ''));
+                return;
+            }
+
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const dateStr = `${day}${month}${year}`;
+            
+            const timeStr = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+            const prefix = currentMode === 'hold' ? 'HLD' : 'STP';
+            const filename = `${prefix}_BRCDE_${dateStr}_${timeStr}.csv`;
+
+            let rows = [];
+
+            if (currentMode === 'hold') {
+                if (includeHeader) {
+                    rows.push("Identifier,Account No,Amount,Reason Code,Reason,Set Date,Journal No");
+                }
+                rows = rows.concat(records.map(r => {
+                    const parts = [
+                        sanitizeCSV(r.identifier || 'SH'),
+                        sanitizeCSV(r.accountNo),
+                        sanitizeCSV(r.holdAmount),
+                        sanitizeCSV(r.reasonCode),
+                        sanitizeCSV(r.reason),
+                        r.identifier === 'RH' ? '' : formatDate(r.holdSetDate),
+                        r.identifier === 'RH' ? '' : sanitizeCSV(r.journalNo)
+                    ];
+                    return parts.join(',');
+                }));
+            } else {
+                if (includeHeader) {
+                    rows.push("Identifier,Account No,Reason Code,Reason Text,Condition");
+                }
+                rows = rows.concat(records.map(r => {
+                    const reasonText = r.identifier === 'RS' ? '' : r.reasonText;
+                    const parts = [
+                        sanitizeCSV(r.identifier || 'SS'),
+                        sanitizeCSV(r.accountNo),
+                        sanitizeCSV(r.stopReason),
+                        sanitizeCSV(reasonText),
+                        sanitizeCSV(r.accountCondition || '0')
+                    ];
+                    return parts.join(',');
+                }));
+            }
+
+            const csvContent = rows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
