@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Layout</title>
+    
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 20px; /* Space between buttons */
+        }
+
+        .nav-btn {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 16px;
+            text-decoration: none;
+            color: white;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        /* Button 1 Style */
+        .btn-1 {
+            background-color: #007bff; /* Blue */
+            box-shadow: 0 4px 0 #0056b3;
+        }
+
+        /* Button 2 Style */
+        .btn-2 {
+            background-color: #28a745; /* Green */
+            box-shadow: 0 4px 0 #1e7e34;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .nav-btn:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Choose Your Interface</h1>
+
+    <div class="button-container">
+        <a href="alt1.html" class="nav-btn btn-1">Go to Layout 1</a>
+
+        <a href="alt2.html" class="nav-btn btn-2">Go to Layout 2</a>
+    </div>
+
+</body>
+</html>
