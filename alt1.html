@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Hold & Stop CSV Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(to bottom right, #eff6ff, #e0e7ff);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .selection-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+
+        .selection-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .option-button {
+            padding: 40px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .option-button.hold {
+            background: linear-gradient(to bottom right, #3b82f6, #2563eb);
+        }
+
+        .option-button.stop {
+            background: linear-gradient(to bottom right, #ef4444, #dc2626);
+        }
+
+        .option-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .option-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 20px 0 10px;
+        }
+
+        .option-subtitle {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .option-details {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .info-box {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .info-title {
+            font-weight: 600;
+            color: #1e3a8a;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-list {
+            color: #1e40af;
+            font-size: 0.875rem;
+            line-height: 1.8;
+        }
+
+        .main-screen {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: #1f2937;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .record-card {
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9fafb;
+            margin-bottom: 20px;
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .record-title {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .btn-delete:hover {
+            color: #991b1b;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .required {
+            color: #dc2626;
+        }
+
+        .conditional {
+            color: #f59e0b;
+            font-size: 0.75rem;
+        }
+
+        .ignored {
+            color: #6b7280;
+            font-size: 0.75rem;
+        }
+
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        input:disabled {
+            background: #f3f4f6;
+            cursor: not-allowed;
+        }
+
+        .error-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .error-title {
+            font-weight: 600;
+            color: #991b1b;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: start;
+            gap: 6px;
+        }
+
+        .error-list {
+            color: #dc2626;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        svg {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        svg.large {
+            width: 64px;
+            height: 64px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Selection Screen -->
+        <div id="selectionScreen" class="selection-screen">
+            <div class="selection-card">
+                <h1 class="title">Bulk Operations CSV Generator</h1>
+                <p class="subtitle">Select the type of operation you want to perform</p>
+
+                <div class="button-grid">
+                    <button class="option-button hold" onclick="selectOperation('hold')">
+                        <svg class="large" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <div class="option-title">Hold Operations</div>
+                        <div class="option-subtitle">Putting and Removing Hold</div>
+                        <div class="option-details">
+                            • Set Hold (SH)<br>
+                            • Remove Hold (RH)
+                        </div>
+                    </button>
+
+                    <button class="option-button stop" onclick="selectOperation('stop')">
+                        <svg class="large" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div class="option-title">Stop Operations</div>
+                        <div class="option-subtitle">Putting and Removing Stop</div>
+                        <div class="option-details">
+                            • Set Stop (SS)<br>
+                            • Remove Stop (RS)
+                        </div>
+                    </button>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-title">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Important Information:
+                    </div>
+                    <div class="info-list">
+                        • Generated files follow Annexure II of Circular GENL-37/2020-21<br>
+                        • Upload to E:\FTP\INTERFACES\BATCH_UPLOAD folder<br>
+                        • Use File Upload Screen (Screen: 69004)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Screen -->
+        <div id="mainScreen" class="hidden">
+            <div class="header">
+                <h1 id="mainTitle">Operations CSV Generator</h1>
+                <button class="btn btn-secondary" onclick="resetForm()">← Back to Selection</button>
+            </div>
+
+            <div class="main-screen">
+                <div class="header">
+                    <h2 id="sectionTitle">Records</h2>
+                    <button class="btn btn-primary" onclick="addRecord()">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add Record
+                    </button>
+                </div>
+
+                <div id="recordsContainer"></div>
+
+                <button class="btn btn-success" onclick="exportCSV()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Export CSV
+                </button>
+
+                <div class="info-box" style="margin-top: 24px;">
+                    <div class="info-title">Instructions:</div>
+                    <div class="info-list">
+                        • Fields marked with <span class="required">*</span> are mandatory<br>
+                        • Fields marked with <span class="conditional">(Conditional)</span> may be required based on operation type<br>
+                        • For Remove Hold (RH): Fields 6 and 7 are automatically ignored<br>
+                        • After export, reason codes and reasons will be displayed for verification<br>
+                        • File names are auto-generated: HLD_BRCDE_DDMMYYYY_NNNN.csv or STP_BRCDE_DDMMYYYY_NNNN.csv<br>
+                        • Upload to E:\FTP\INTERFACES\BATCH_UPLOAD folder via Screen 69004
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let operationType = null;
+        let holdRecords = [];
+        let stopRecords = [];
+        let errors = {};
+
+        function selectOperation(type) {
+            operationType = type;
+            document.getElementById('selectionScreen').classList.add('hidden');
+            document.getElementById('mainScreen').classList.remove('hidden');
+            
+            if (type === 'hold') {
+                document.getElementById('mainTitle').textContent = 'Hold Operations CSV Generator';
+                document.getElementById('sectionTitle').textContent = 'Hold Records (Putting and Removing Hold)';
+                holdRecords = [{
+                    identifier: 'SH',
+                    accountNo: '',
+                    holdAmount: '',
+                    reasonCode: '04',
+                    reason: '',
+                    holdSetDate: '',
+                    journalNo: ''
+                }];
+            } else {
+                document.getElementById('mainTitle').textContent = 'Stop Operations CSV Generator';
+                document.getElementById('sectionTitle').textContent = 'Stop Records (Putting and Removing Stop)';
+                stopRecords = [{
+                    identifier: 'SS',
+                    accountNo: '',
+                    stopReason: '01',
+                    reasonText: '',
+                    accountCondition: '0'
+                }];
+            }
+            
+            renderRecords();
+        }
+
+        function resetForm() {
+            operationType = null;
+            holdRecords = [];
+            stopRecords = [];
+            errors = {};
+            document.getElementById('selectionScreen').classList.remove('hidden');
+            document.getElementById('mainScreen').classList.add('hidden');
+        }
+
+        function addRecord() {
+            if (operationType === 'hold') {
+                holdRecords.push({
+                    identifier: 'SH',
+                    accountNo: '',
+                    holdAmount: '',
+                    reasonCode: '04',
+                    reason: '',
+                    holdSetDate: '',
+                    journalNo: ''
+                });
+            } else {
+                stopRecords.push({
+                    identifier: 'SS',
+                    accountNo: '',
+                    stopReason: '01',
+                    reasonText: '',
+                    accountCondition: '0'
+                });
+            }
+            renderRecords();
+        }
+
+        function removeRecord(index) {
+            if (operationType === 'hold') {
+                holdRecords.splice(index, 1);
+                delete errors[`hold_${index}`];
+            } else {
+                stopRecords.splice(index, 1);
+                delete errors[`stop_${index}`];
+            }
+            renderRecords();
+        }
+
+        function updateRecord(index, field, value) {
+            if (operationType === 'hold') {
+                holdRecords[index][field] = value;
+                validateHoldRecord(index, holdRecords[index]);
+            } else {
+                stopRecords[index][field] = value;
+                validateStopRecord(index, stopRecords[index]);
+            }
+            renderRecords();
+        }
+
+        function validateHoldRecord(index, record) {
+            const recordErrors = [];
+            
+            if (!record.accountNo || record.accountNo.length !== 11) {
+                recordErrors.push('Account Number must be exactly 11 digits');
+            }
+            
+            if (!record.holdAmount && record.identifier === 'SH') {
+                recordErrors.push('Hold Amount is mandatory for Set Hold (SH)');
+            }
+            
+            if (record.holdAmount && !/^\d+(\.\d{1,2})?$/.test(record.holdAmount)) {
+                recordErrors.push('Hold Amount must be a valid number (e.g., 10000.00)');
+            }
+            
+            if (!record.reasonCode || record.reasonCode.length > 2) {
+                recordErrors.push('Reason Code is mandatory (max 2 characters)');
+            }
+            
+            if (record.identifier === 'SH' && record.reasonCode && !record.reason) {
+                recordErrors.push('Reason is conditionally mandatory when setting hold');
+            }
+            
+            if (record.holdSetDate && record.identifier === 'RH') {
+                recordErrors.push('Hold Set Date should be ignored for Remove Hold (RH)');
+            }
+            
+            if (record.journalNo && record.identifier === 'RH') {
+                recordErrors.push('Journal No should be ignored for Remove Hold (RH)');
+            }
+
+            if (recordErrors.length > 0) {
+                errors[`hold_${index}`] = recordErrors;
+            } else {
+                delete errors[`hold_${index}`];
+            }
+        }
+
+        function validateStopRecord(index, record) {
+            const recordErrors = [];
+            
+            if (!record.accountNo || record.accountNo.length !== 11) {
+                recordErrors.push('Account Number must be exactly 11 digits');
+            }
+            
+            if (!record.stopReason || record.stopReason.length > 2) {
+                recordErrors.push('Stop Reason is mandatory (max 2 characters)');
+            }
+            
+            if (record.reasonText && record.reasonText.length > 17) {
+                recordErrors.push('Reason Text must not exceed 17 characters');
+            }
+
+            if (recordErrors.length > 0) {
+                errors[`stop_${index}`] = recordErrors;
+            } else {
+                delete errors[`stop_${index}`];
+            }
+        }
+
+        function renderRecords() {
+            const container = document.getElementById('recordsContainer');
+            container.innerHTML = '';
+            
+            const records = operationType === 'hold' ? holdRecords : stopRecords;
+            
+            records.forEach((record, index) => {
+                const recordDiv = document.createElement('div');
+                recordDiv.className = 'record-card';
+                
+                if (operationType === 'hold') {
+                    recordDiv.innerHTML = renderHoldRecord(record, index);
+                } else {
+                    recordDiv.innerHTML = renderStopRecord(record, index);
+                }
+                
+                container.appendChild(recordDiv);
+            });
+        }
+
+        function renderHoldRecord(record, index) {
+            const errorKey = `hold_${index}`;
+            const hasErrors = errors[errorKey];
+            
+            return `
+                <div class="record-header">
+                    <div class="record-title">Record ${index + 1}</div>
+                    ${holdRecords.length > 1 ? `
+                        <button class="btn-delete" onclick="removeRecord(${index})">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    ` : ''}
+                </div>
+
+                ${hasErrors ? `
+                    <div class="error-box">
+                        <div class="error-title">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Validation Errors:
+                        </div>
+                        <div class="error-list">
+                            ${errors[errorKey].map(err => `• ${err}`).join('<br>')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>1. Identifier (SH/RH) <span class="required">*</span></label>
+                        <select value="${record.identifier}" onchange="updateRecord(${index}, 'identifier', this.value)">
+                            <option value="SH" ${record.identifier === 'SH' ? 'selected' : ''}>SH - Set Hold</option>
+                            <option value="RH" ${record.identifier === 'RH' ? 'selected' : ''}>RH - Remove Hold</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>2. Account Number <span class="required">*</span></label>
+                        <input type="text" maxlength="11" value="${record.accountNo}" 
+                            onchange="updateRecord(${index}, 'accountNo', this.value)" 
+                            placeholder="00400000539">
+                    </div>
+
+                    <div class="form-group">
+                        <label>3. Hold Amount <span class="required">*</span></label>
+                        <input type="text" value="${record.holdAmount}" 
+                            onchange="updateRecord(${index}, 'holdAmount', this.value)" 
+                            placeholder="10000.00">
+                    </div>
+
+                    <div class="form-group">
+                        <label>4. Reason Code <span class="required">*</span></label>
+                        <input type="text" maxlength="2" value="${record.reasonCode}" 
+                            onchange="updateRecord(${index}, 'reasonCode', this.value)" 
+                            placeholder="04">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>5. Reason ${record.identifier === 'SH' ? '<span class="conditional">(Conditional - Required for SH)</span>' : ''}</label>
+                        <input type="text" maxlength="24" value="${record.reason}" 
+                            onchange="updateRecord(${index}, 'reason', this.value)" 
+                            placeholder="Double Cr-RTGS/NEFT">
+                    </div>
+
+                    <div class="form-group">
+                        <label>6. Hold Set Date ${record.identifier === 'RH' ? '<span class="ignored">(Ignored for RH)</span>' : ''}</label>
+                        <input type="date" value="${record.holdSetDate}" 
+                            onchange="updateRecord(${index}, 'holdSetDate', this.value)"
+                            ${record.identifier === 'RH' ? 'disabled' : ''}>
+                    </div>
+
+                    <div class="form-group">
+                        <label>7. Journal No ${record.identifier === 'RH' ? '<span class="ignored">(Ignored for RH)</span>' : ''}</label>
+                        <input type="text" maxlength="9" value="${record.journalNo}" 
+                            onchange="updateRecord(${index}, 'journalNo', this.value)"
+                            placeholder="923423456"
+                            ${record.identifier === 'RH' ? 'disabled' : ''}>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStopRecord(record, index) {
+            const errorKey = `stop_${index}`;
+            const hasErrors = errors[errorKey];
+            
+            return `
+                <div class="record-header">
+                    <div class="record-title">Record ${index + 1}</div>
+                    ${stopRecords.length > 1 ? `
+                        <button class="btn-delete" onclick="removeRecord(${index})">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    ` : ''}
+                </div>
+
+                ${hasErrors ? `
+                    <div class="error-box">
+                        <div class="error-title">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Validation Errors:
+                        </div>
+                        <div class="error-list">
+                            ${errors[errorKey].map(err => `• ${err}`).join('<br>')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>1. Identifier (SS/RS) <span class="required">*</span></label>
+                        <select value="${record.identifier}" onchange="updateRecord(${index}, 'identifier', this.value)">
+                            <option value="SS" ${record.identifier === 'SS' ? 'selected' : ''}>SS - Set Stop</option>
+                            <option value="RS" ${record.identifier === 'RS' ? 'selected' : ''}>RS - Remove Stop</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>2. Account Number <span class="required">*</span></label>
+                        <input type="text" maxlength="11" value="${record.accountNo}" 
+                            onchange="updateRecord(${index}, 'accountNo', this.value)" 
+                            placeholder="00400000539">
+                    </div>
+
+                    <div class="form-group">
+                        <label>3. Stop Reason <span class="required">*</span></label>
+                        <input type="text" maxlength="2" value="${record.stopReason}" 
+                            onchange="updateRecord(${index}, 'stopReason', this.value)" 
+                            placeholder="01">
+                    </div>
+
+                    <div class="form-group">
+                        <label>5. Account Condition <span class="conditional">(Conditional)</span></label>
+                        <select value="${record.accountCondition}" onchange="updateRecord(${index}, 'accountCondition', this.value)">
+                            <option value="0" ${record.accountCondition === '0' ? 'selected' : ''}>0 - Normal</option>
+                            <option value="1" ${record.accountCondition === '1' ? 'selected' : ''}>1 - Frozen</option>
+                            <option value="3" ${record.accountCondition === '3' ? 'selected' : ''}>3 - Debit Freeze</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>4. Reason Text <span style="color: #6b7280;">(Optional)</span></label>
+                        <input type="text" maxlength="17" value="${record.reasonText}" 
+                            onchange="updateRecord(${index}, 'reasonText', this.value)" 
+                            placeholder="Brief Text">
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatDate(date) {
+            if (!date) return '';
+            const d = new Date(date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}${month}${year}`;
+        }
+
+        function exportCSV() {
+            if (operationType === 'hold') {
+                // Validate all records
+                holdRecords.forEach((record, index) => validateHoldRecord(index, record));
+                
+                if (Object.keys(errors).some(key => key.startsWith('hold_'))) {
+                    alert('Please fix all errors before exporting');
+                    return;
+                }
+
+                const today = new Date();
+                const dateStr = formatDate(today);
+                const timeStr = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+                const filename = `HLD_BRCDE_${dateStr}_${timeStr}.csv`;
+
+                const rows = holdRecords.map(record => {
+                    const parts = [
+                        record.identifier || 'SH',
+                        record.accountNo || '',
+                        record.holdAmount || '',
+                        record.reasonCode || '',
+                        record.reason || '',
+                        record.identifier === 'RH' ? '' : (record.holdSetDate ? formatDate(record.holdSetDate) : ''),
+                        record.identifier === 'RH' ? '' : (record.journalNo || '')
+                    ];
+                    return parts.join(',');
+                });
+
+                const csv = rows.join('\n');
+                downloadCSV(csv, filename);
+                
+                // Show reason information
+                const uniqueReasons = new Set();
+                holdRecords.forEach(record => {
+                    if (record.reasonCode && record.reason) {
+                        uniqueReasons.add(`Code: ${record.reasonCode} - ${record.reason}`);
+                    }
+                });
+                
+                if (uniqueReasons.size > 0) {
+                    setTimeout(() => {
+                        alert('Reason Codes and Reasons used:\n\n' + Array.from(uniqueReasons).join('\n'));
+                    }, 100);
+                }
+            } else {
+                // Validate all records
+                stopRecords.forEach((record, index) => validateStopRecord(index, record));
+                
+                if (Object.keys(errors).some(key => key.startsWith('stop_'))) {
+                    alert('Please fix all errors before exporting');
+                    return;
+                }
+
+                const today = new Date();
+                const dateStr = formatDate(today);
+                const timeStr = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+                const filename = `STP_BRCDE_${dateStr}_${timeStr}.csv`;
+
+                const rows = stopRecords.map(record => {
+                    const parts = [
+                        record.identifier || 'SS',
+                        record.accountNo || '',
+                        record.stopReason || '',
+                        record.reasonText || '',
+                        record.accountCondition || ''
+                    ];
+                    return parts.join(',');
+                });
+
+                const csv = rows.join('\n');
+                downloadCSV(csv, filename);
+                
+                // Show reason information
+                const uniqueReasons = new Set();
+                stopRecords.forEach(record => {
+                    if (record.stopReason) {
+                        uniqueReasons.add(`Reason: ${record.stopReason}${record.reasonText ? ' - ' + record.reasonText : ''}`);
+                    }
+                });
+                
+                if (uniqueReasons.size > 0) {
+                    setTimeout(() => {
+                        alert('Stop Reasons used:\n\n' + Array.from(uniqueReasons).join('\n'));
+                    }, 100);
+                }
+            }
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
